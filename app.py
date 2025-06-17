@@ -138,7 +138,7 @@ if mes_selecionado == "Trimestre":
     mes_cols = st.columns(3)
 else:
     meses = [mes_selecionado]
-    mes_cols = [st]
+    mes_cols = [st.container()]
 
 metas = dados_funcoes[funcao_selecionada]
 valor_base = valor_mensal[funcao_selecionada]
