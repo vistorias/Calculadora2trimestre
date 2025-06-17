@@ -11,12 +11,18 @@ mes_selecionado = st.radio(
     horizontal=True
 )
 
-# Funções disponíveis
+# Filtro de função
 funcoes = [
     "GERENTE", "SUPERVISOR", "VISTORIADOR", "ATENDENTE",
     "SERVIÇOS GERAIS", "ANALISTA", "SUPERVISOR ANALISE"
 ]
 funcao_selecionada = st.selectbox("Selecione sua função:", funcoes)
+
+# Filtro de empresa
+empresas = ["LOG", "StarCheck", "Tokyo", "Velox"]
+empresa_selecionada = None
+if funcao_selecionada in ["GERENTE", "SUPERVISOR"]:
+    empresa_selecionada = st.selectbox("Selecione a empresa:", empresas)
 
 # Metas e pesos por função
 dados_funcoes = {
@@ -85,7 +91,7 @@ valor_mensal = {
     "SUPERVISOR ANALISE": 800
 }
 
-# Pesos de produção por cidade (exemplo simplificado da sua imagem)
+# Pesos de produção por cidade
 pesos_producao_por_empresa = {
     "LOG": {
         "Açailândia": 15,
@@ -139,7 +145,7 @@ if mes_selecionado == "Trimestre":
 else:
     meses = [mes_selecionado]
 
-# Calculo de cumprimento
+# Cálculo
 metas = dados_funcoes[funcao_selecionada]
 valor_base = valor_mensal[funcao_selecionada]
 cumprimento_total = 0
@@ -149,26 +155,24 @@ for mes in meses:
 
     for meta, peso in metas:
         if meta == "Produção":
-            if funcao_selecionada == "GERENTE":
-                st.markdown("#### Produção por Cidade (Gerente)")
-                for empresa, cidades_pesos in pesos_producao_por_empresa.items():
-                    st.markdown(f"**{empresa}**")
-                    for cidade, cidade_peso in cidades_pesos.items():
-                        key = f"{meta}_{empresa}_{cidade}_{mes}"
-                        if st.checkbox(f"{cidade} ({cidade_peso}% da produção)", key=key):
-                            proporcao = cidade_peso / 100
-                            cumprimento_total += proporcao * peso
+            if funcao_selecionada == "GERENTE" and empresa_selecionada:
+                st.markdown(f"#### Produção por Cidade - {empresa_selecionada}")
+                cidades_pesos = pesos_producao_por_empresa[empresa_selecionada]
+                for cidade, cidade_peso in cidades_pesos.items():
+                    key = f"{meta}_{empresa_selecionada}_{cidade}_{mes}"
+                    if st.checkbox(f"{cidade} ({cidade_peso}% da produção)", key=key):
+                        proporcao = cidade_peso / 100
+                        cumprimento_total += proporcao * peso
 
-            elif funcao_selecionada == "SUPERVISOR":
-                st.markdown("#### Produção por Cidade (Supervisor)")
+            elif funcao_selecionada == "SUPERVISOR" and empresa_selecionada:
+                st.markdown(f"#### Produção por Cidade - Supervisor - {empresa_selecionada}")
                 supervisor_nome = st.text_input(f"Digite seu nome (Supervisor) para o mês {mes}:", key=f"super_{mes}")
-
                 if supervisor_nome.upper() in cidades_por_supervisor:
                     cidades_supervisor = cidades_por_supervisor[supervisor_nome.upper()]
                     peso_por_cidade = peso / len(cidades_supervisor)
                     for cidade in cidades_supervisor:
                         key = f"{meta}_{cidade}_{mes}"
-                        if st.checkbox(f"{cidade} ( {peso_por_cidade:.1f}% da meta Produção )", key=key):
+                        if st.checkbox(f"{cidade} ({peso_por_cidade:.1f}% da meta Produção)", key=key):
                             cumprimento_total += peso_por_cidade
                 else:
                     st.warning("⚠️ Nome de supervisor não encontrado. Digite exatamente como cadastrado.")
@@ -183,13 +187,13 @@ for mes in meses:
             if st.checkbox(f"{meta} ({peso}%)", key=key):
                 cumprimento_total += peso
 
-# Resultado
+# Resultado final
 valor_total = valor_base * len(meses)
 valor_recebido = valor_total * (cumprimento_total / 100)
 valor_perdido = valor_total - valor_recebido
 
 st.markdown("---")
-st.markdown(f"### 🎯 Resultado da Simulação - **{mes_selecionado}**")
+st.markdown(f"### 🎯 Resultado da Simulação - **{mes_selecionado} | {empresa_selecionada if empresa_selecionada else ''}**")
 st.success(f"💰 Valor possível: R$ {valor_total:,.2f}")
 st.info(f"✅ Valor a receber: R$ {valor_recebido:,.2f}")
 st.error(f"❌ Valor perdido: R$ {valor_perdido:,.2f}")
