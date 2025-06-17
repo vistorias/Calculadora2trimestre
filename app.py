@@ -24,7 +24,7 @@ empresa_selecionada = None
 if funcao_selecionada in ["GERENTE", "SUPERVISOR"]:
     empresa_selecionada = st.selectbox("Selecione a empresa:", empresas)
 
-# Base de metas
+# Dados das metas
 dados_funcoes = {
     "GERENTE": [
         ("Produção", 30),
@@ -138,12 +138,11 @@ if mes_selecionado == "Trimestre":
     mes_cols = st.columns(3)
 else:
     meses = [mes_selecionado]
-    mes_cols = None  # Não vamos criar columns para mês único
+    mes_cols = None
 
 metas = dados_funcoes[funcao_selecionada]
 valor_base = valor_mensal[funcao_selecionada]
-cumprimento_total = 0
-meses_marcados = set()
+valores_por_mes = []
 
 for idx, mes in enumerate(meses):
     if mes_selecionado == "Trimestre":
@@ -153,7 +152,7 @@ for idx, mes in enumerate(meses):
 
     with target_col:
         st.markdown(f"**{mes}**")
-        teve_meta_marcada_no_mes = False
+        cumprimento_mes = 0
 
         for meta, peso in metas:
             if meta == "Produção":
@@ -162,9 +161,7 @@ for idx, mes in enumerate(meses):
                     for cidade, cidade_peso in pesos_producao_por_empresa[empresa_selecionada].items():
                         key = f"{meta}_{empresa_selecionada}_{cidade}_{mes}"
                         if st.checkbox(f"{cidade} ({cidade_peso}% da produção)", key=key):
-                            proporcao = cidade_peso / 100
-                            cumprimento_total += proporcao * peso
-                            teve_meta_marcada_no_mes = True
+                            cumprimento_mes += (peso * cidade_peso / 100)
 
                 elif funcao_selecionada == "SUPERVISOR" and empresa_selecionada:
                     st.markdown(f"🔸 Produção por Cidade - Supervisor ({empresa_selecionada})")
@@ -175,32 +172,30 @@ for idx, mes in enumerate(meses):
                         for cidade in cidades_supervisor:
                             key = f"{meta}_{cidade}_{mes}"
                             if st.checkbox(f"{cidade} ({peso_por_cidade:.1f}% da Produção)", key=key):
-                                cumprimento_total += peso_por_cidade
-                                teve_meta_marcada_no_mes = True
+                                cumprimento_mes += peso_por_cidade
                     else:
                         st.warning("⚠️ Supervisor não encontrado. Digite exatamente como cadastrado.")
 
                 elif funcao_selecionada in ["VISTORIADOR", "ATENDENTE"]:
                     key = f"{meta}_{mes}"
                     if st.checkbox(f"{meta} ({peso}%)", key=key):
-                        cumprimento_total += peso
-                        teve_meta_marcada_no_mes = True
+                        cumprimento_mes += peso
             else:
                 key = f"{meta}_{mes}"
                 if st.checkbox(f"{meta} ({peso}%)", key=key):
-                    cumprimento_total += peso
-                    teve_meta_marcada_no_mes = True
+                    cumprimento_mes += peso
 
-        if teve_meta_marcada_no_mes:
-            meses_marcados.add(mes)
+        valor_do_mes = valor_base * (cumprimento_mes / 100)
+        valores_por_mes.append(valor_do_mes)
 
-valor_total = valor_base * len(meses_marcados)
-valor_recebido = valor_total * (cumprimento_total / 100) if valor_total > 0 else 0
-valor_perdido = valor_total - valor_recebido
+valor_total_possivel = valor_base * len(meses)
+valor_recebido = sum(valores_por_mes)
+valor_perdido = valor_total_possivel - valor_recebido
+cumprimento_total_percentual = (valor_recebido / valor_total_possivel) * 100 if valor_total_possivel > 0 else 0
 
 st.markdown("---")
 st.markdown(f"### 🎯 Resultado da Simulação - **{mes_selecionado} | {empresa_selecionada if empresa_selecionada else ''}**")
-st.success(f"💰 Valor possível: R$ {valor_total:,.2f}")
+st.success(f"💰 Valor possível: R$ {valor_total_possivel:,.2f}")
 st.info(f"✅ Valor a receber: R$ {valor_recebido:,.2f}")
 st.error(f"❌ Valor perdido: R$ {valor_perdido:,.2f}")
-st.markdown(f"📊 Cumprimento total: **{cumprimento_total:.1f}%**")
+st.markdown(f"📊 Cumprimento total: **{cumprimento_total_percentual:.1f}%**")
