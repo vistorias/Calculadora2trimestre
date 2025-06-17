@@ -138,7 +138,7 @@ if mes_selecionado == "Trimestre":
     mes_cols = st.columns(3)
 else:
     meses = [mes_selecionado]
-    mes_cols = [st.container()]
+    mes_cols = None  # Não vamos criar columns para mês único
 
 metas = dados_funcoes[funcao_selecionada]
 valor_base = valor_mensal[funcao_selecionada]
@@ -146,7 +146,11 @@ cumprimento_total = 0
 meses_marcados = set()
 
 for idx, mes in enumerate(meses):
-    target_col = mes_cols[idx] if mes_selecionado == "Trimestre" else mes_cols[0]
+    if mes_selecionado == "Trimestre":
+        target_col = mes_cols[idx]
+    else:
+        target_col = st.container()
+
     with target_col:
         st.markdown(f"**{mes}**")
         teve_meta_marcada_no_mes = False
