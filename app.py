@@ -133,7 +133,6 @@ cidades_por_supervisor = {
     "LUCAS SAMPAIO NEVES": ["Imperatriz"]
 }
 
-# Determinar meses
 if mes_selecionado == "Trimestre":
     meses = ["Abril", "Maio", "Junho"]
     mes_cols = st.columns(3)
@@ -150,6 +149,7 @@ for idx, mes in enumerate(meses):
     with mes_cols[idx if mes_selecionado == "Trimestre" else 0]:
         st.markdown(f"**{mes}**")
         teve_meta_marcada_no_mes = False
+
         for meta, peso in metas:
             if meta == "Produção":
                 if funcao_selecionada == "GERENTE" and empresa_selecionada:
@@ -189,7 +189,7 @@ for idx, mes in enumerate(meses):
         if teve_meta_marcada_no_mes:
             meses_marcados.add(mes)
 
-# Calcular valor apenas com base nos meses marcados
+# Valor calculado apenas pelos meses que tiveram pelo menos uma meta marcada
 valor_total = valor_base * len(meses_marcados)
 valor_recebido = valor_total * (cumprimento_total / 100) if valor_total > 0 else 0
 valor_perdido = valor_total - valor_recebido
