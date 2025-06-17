@@ -11,14 +11,14 @@ mes_selecionado = st.radio(
     horizontal=True
 )
 
-# Seleção de função
+# Funções disponíveis
 funcoes = [
     "GERENTE", "SUPERVISOR", "VISTORIADOR", "ATENDENTE",
     "SERVIÇOS GERAIS", "ANALISTA", "SUPERVISOR ANALISE"
 ]
 funcao_selecionada = st.selectbox("Selecione sua função:", funcoes)
 
-# Base de metas e pesos
+# Metas e pesos por função
 dados_funcoes = {
     "GERENTE": [
         ("Produção", 30),
@@ -133,41 +133,34 @@ cidades_por_supervisor = {
     "LUCAS SAMPAIO NEVES": ["Imperatriz"]
 }
 
-# Seleção de metas para o mês
-metas = dados_funcoes[funcao_selecionada]
-valor_base = valor_mensal[funcao_selecionada]
-cumprimento_total = 0
-
+# Meses
 if mes_selecionado == "Trimestre":
     meses = ["Abril", "Maio", "Junho"]
 else:
     meses = [mes_selecionado]
 
-meta_por_mes = {mes: 0 for mes in meses}
+# Calculo de cumprimento
+metas = dados_funcoes[funcao_selecionada]
+valor_base = valor_mensal[funcao_selecionada]
+cumprimento_total = 0
 
 for mes in meses:
     st.markdown(f"### ✅ {mes} - Metas cumpridas:")
 
     for meta, peso in metas:
-
-        # Caso especial: PRODUÇÃO
         if meta == "Produção":
             if funcao_selecionada == "GERENTE":
                 st.markdown("#### Produção por Cidade (Gerente)")
-                cidades = list(pesos_producao_por_empresa.keys())
-                producao_total = 0
                 for empresa, cidades_pesos in pesos_producao_por_empresa.items():
                     st.markdown(f"**{empresa}**")
                     for cidade, cidade_peso in cidades_pesos.items():
-                        key = f"{meta}_{cidade}_{mes}"
+                        key = f"{meta}_{empresa}_{cidade}_{mes}"
                         if st.checkbox(f"{cidade} ({cidade_peso}% da produção)", key=key):
                             proporcao = cidade_peso / 100
-                            producao_total += proporcao * peso
-                cumprimento_total += producao_total
+                            cumprimento_total += proporcao * peso
 
             elif funcao_selecionada == "SUPERVISOR":
                 st.markdown("#### Produção por Cidade (Supervisor)")
-                # Aqui você pode criar um campo para o usuário digitar o nome do supervisor
                 supervisor_nome = st.text_input(f"Digite seu nome (Supervisor) para o mês {mes}:", key=f"super_{mes}")
 
                 if supervisor_nome.upper() in cidades_por_supervisor:
@@ -186,17 +179,15 @@ for mes in meses:
                     cumprimento_total += peso
 
         else:
-            # Outras metas (não produção)
             key = f"{meta}_{mes}"
             if st.checkbox(f"{meta} ({peso}%)", key=key):
                 cumprimento_total += peso
 
-# Calcular valor total
+# Resultado
 valor_total = valor_base * len(meses)
 valor_recebido = valor_total * (cumprimento_total / 100)
 valor_perdido = valor_total - valor_recebido
 
-# Resultado final
 st.markdown("---")
 st.markdown(f"### 🎯 Resultado da Simulação - **{mes_selecionado}**")
 st.success(f"💰 Valor possível: R$ {valor_total:,.2f}")
