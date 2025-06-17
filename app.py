@@ -11,7 +11,7 @@ mes_selecionado = st.radio(
     horizontal=True
 )
 
-# Funções disponíveis
+# Filtro de função
 funcoes = [
     "GERENTE", "SUPERVISOR", "VISTORIADOR", "ATENDENTE",
     "SERVIÇOS GERAIS", "ANALISTA", "SUPERVISOR ANALISE"
@@ -24,7 +24,7 @@ empresa_selecionada = None
 if funcao_selecionada in ["GERENTE", "SUPERVISOR"]:
     empresa_selecionada = st.selectbox("Selecione a empresa:", empresas)
 
-# Dados das metas e pesos
+# Base de metas
 dados_funcoes = {
     "GERENTE": [
         ("Produção", 30),
@@ -125,51 +125,44 @@ pesos_producao_por_empresa = {
 cidades_por_supervisor = {
     "MARTA OLIVEIRA COSTA RAMOS": ["São Luís"],
     "ELEILSON DE SOUSA ADELINO": ["Açailândia", "Carolina", "Presidente Dutra", "Timon"],
-
     "SAMMYRA JISELE BRITO REIS": ["Bacabal", "Codó"],
     "GEISE ALINE MACEDO DE MEDEIROS": ["Balsas", "Pinheiro", "Riachão"],
     "CHRISTIANE SILVA GUIMARÃES": ["São Luís", "Caxias"],
-
     "MADSON": ["São José de Ribamar"],
-
     "ARYSON PAULINELLE GUTERES COSTA": ["São Luís", "Pedreiras", "Estreito", "Grajaú"],
     "LUCAS SAMPAIO NEVES": ["Imperatriz"]
 }
 
-# Determina os meses ativos
+# Determinar meses
 if mes_selecionado == "Trimestre":
     meses = ["Abril", "Maio", "Junho"]
+    mes_cols = st.columns(3)
 else:
     meses = [mes_selecionado]
+    mes_cols = [st]
 
-# Variáveis de cálculo
 metas = dados_funcoes[funcao_selecionada]
 valor_base = valor_mensal[funcao_selecionada]
 cumprimento_total = 0
+meses_marcados = set()
 
-# Layout horizontal para o Trimestre
-if mes_selecionado == "Trimestre":
-    st.markdown("### ✅ Marque as metas cumpridas em cada mês:")
-    mes_cols = st.columns(3)
-else:
-    mes_cols = [st]
-
-# Loop de meses
 for idx, mes in enumerate(meses):
     with mes_cols[idx if mes_selecionado == "Trimestre" else 0]:
         st.markdown(f"**{mes}**")
+        teve_meta_marcada_no_mes = False
         for meta, peso in metas:
             if meta == "Produção":
                 if funcao_selecionada == "GERENTE" and empresa_selecionada:
-                    st.markdown(f"🔸 **Produção por Cidade - {empresa_selecionada}**")
+                    st.markdown(f"🔸 Produção por Cidade - {empresa_selecionada}")
                     for cidade, cidade_peso in pesos_producao_por_empresa[empresa_selecionada].items():
                         key = f"{meta}_{empresa_selecionada}_{cidade}_{mes}"
                         if st.checkbox(f"{cidade} ({cidade_peso}% da produção)", key=key):
                             proporcao = cidade_peso / 100
                             cumprimento_total += proporcao * peso
+                            teve_meta_marcada_no_mes = True
 
                 elif funcao_selecionada == "SUPERVISOR" and empresa_selecionada:
-                    st.markdown(f"🔸 **Produção por Cidade - Supervisor ({empresa_selecionada})**")
+                    st.markdown(f"🔸 Produção por Cidade - Supervisor ({empresa_selecionada})")
                     supervisor_nome = st.text_input(f"Nome do Supervisor - {mes}:", key=f"super_{mes}")
                     if supervisor_nome.upper() in cidades_por_supervisor:
                         cidades_supervisor = cidades_por_supervisor[supervisor_nome.upper()]
@@ -178,6 +171,7 @@ for idx, mes in enumerate(meses):
                             key = f"{meta}_{cidade}_{mes}"
                             if st.checkbox(f"{cidade} ({peso_por_cidade:.1f}% da Produção)", key=key):
                                 cumprimento_total += peso_por_cidade
+                                teve_meta_marcada_no_mes = True
                     else:
                         st.warning("⚠️ Supervisor não encontrado. Digite exatamente como cadastrado.")
 
@@ -185,14 +179,19 @@ for idx, mes in enumerate(meses):
                     key = f"{meta}_{mes}"
                     if st.checkbox(f"{meta} ({peso}%)", key=key):
                         cumprimento_total += peso
+                        teve_meta_marcada_no_mes = True
             else:
                 key = f"{meta}_{mes}"
                 if st.checkbox(f"{meta} ({peso}%)", key=key):
                     cumprimento_total += peso
+                    teve_meta_marcada_no_mes = True
 
-# Cálculo final
-valor_total = valor_base * len(meses)
-valor_recebido = valor_total * (cumprimento_total / 100)
+        if teve_meta_marcada_no_mes:
+            meses_marcados.add(mes)
+
+# Calcular valor apenas com base nos meses marcados
+valor_total = valor_base * len(meses_marcados)
+valor_recebido = valor_total * (cumprimento_total / 100) if valor_total > 0 else 0
 valor_perdido = valor_total - valor_recebido
 
 st.markdown("---")
